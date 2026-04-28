@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Rastreio Logística Pleno</title>
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+    <style>
+        body {
+            font-family: Arial;
+            padding: 20px;
+            background: #f4f4f5;
+        }
+
+        .box {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        input,
+        button {
+            padding: 10px;
+            margin: 5px 0;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        #logs {
+            background: #1e293b;
+            color: #10b981;
+            padding: 10px;
+            height: 150px;
+            overflow-y: auto;
+            font-family: monospace;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="box">
+        <h3>1. Conectar na Entrega (Visão do Cliente)</h3>
+        <input type="text" id="deliveryId" placeholder="Cole o ID (UUID) da entrega aqui...">
+        <button onclick="joinRoom()">Entrar na Sala de Rastreio</button>
+    </div>
+
+    <div class="box">
+        <h3>2. Simular GPS (Visão do Motorista)</h3>
+        <button onclick="sendLocation()">Disparar Nova Coordenada</button>
+    </div>
+
+    <div class="box">
+        <h3>Console do Mapa (O que o React receberia)</h3>
+        <div id="logs">Aguardando conexão...<br></div>
+    </div>
+
+    <script>
+        const socket = io('http://localhost:3333');
+        let currentDeliveryId = '';
+
+        function log(msg) {
+            document.getElementById('logs').innerHTML += `> ${msg}<br>`;
+        }
+
+        socket.on('connect', () => log('Conectado ao Servidor WebSocket!'));
+
+        function joinRoom() {
+            currentDeliveryId = document.getElementById('deliveryId').value;
+            if (!currentDeliveryId) return alert("Preencha o ID!");
+            socket.emit('join_delivery', currentDeliveryId);
+            log(`Escutando atualizações da entrega: ${currentDeliveryId}`);
+        }
+
+        function sendLocation() {
+            if (!currentDeliveryId) return alert("Entre na sala primeiro!");
+            const mockLat = -1.2965 + (Math.random() * 0.0010);
+            const mockLng = -47.9254 + (Math.random() * 0.0010);
+
+            socket.emit('update_location', {
+                delivery_id: currentDeliveryId,
+                lat: mockLat,
+                lng: mockLng
+            });
+            log(`Motorista enviou: ${mockLat.toFixed(4)}, ${mockLng.toFixed(4)}`);
+        }
+
+        socket.on('new_location', (data) => {
+            log(`🔥 Backend confirmou e repassou o Pino: Lat ${data.lat.toFixed(4)} | Lng ${data.lng.toFixed(4)}`);
+        });
+    </script>
+</body>
+
+</html>

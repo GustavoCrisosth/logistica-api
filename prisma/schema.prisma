@@ -1,0 +1,64 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  extensions = [postgis]
+}
+
+enum Role {
+  ADMIN
+  DRIVER
+}
+
+enum DeliveryStatus {
+  PENDING
+  IN_TRANSIT
+  DELIVERED
+  CANCELED
+}
+
+model User {
+  id            String     @id @default(uuid())
+  name          String
+  email         String     @unique
+  password_hash String
+  role          Role       @default(DRIVER)
+  deliveries    Delivery[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Delivery {
+  id               String         @id @default(uuid())
+  tracking_code    String         @unique
+  driver_id        String?
+  driver           User?          @relation(fields: [driver_id], references: [id])
+  customer_name    String
+  customer_email   String
+  status           DeliveryStatus @default(PENDING)
+  pickup_location  Unsupported("geography(Point, 4326)")
+  dropoff_location Unsupported("geography(Point, 4326)")
+
+  history DeliveryLocationHistory[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("deliveries")
+}
+
+model DeliveryLocationHistory {
+  id          String   @id @default(uuid())
+  delivery_id String
+  delivery    Delivery @relation(fields: [delivery_id], references: [id])
+  location    Unsupported("geography(Point, 4326)")
+  timestamp   DateTime @default(now())
+
+  @@map("delivery_locations_history")
+}
