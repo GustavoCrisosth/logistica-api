@@ -9,6 +9,7 @@ import { authRoutes } from './routes/authRoutes.js';
 import { deliveryRoutes } from './routes/deliveryRoutes.js';
 import { UpdateLocationService } from './services/UpdateLocationService.js';
 
+
 const app = express();
 
 const httpServer = createServer(app);

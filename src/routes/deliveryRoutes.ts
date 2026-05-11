@@ -7,13 +7,8 @@ const deliveryController = new DeliveryController();
 
 deliveryRoutes.use(authMiddleware);
 
-deliveryRoutes.get('/', (req: AuthRequest, res) => {
-    return res.json({
-        message: 'Acesso liberado à área secreta de entregas!',
-        loggedUser: req.user
-    });
-});
-
+deliveryRoutes.get('/', deliveryController.list);
+deliveryRoutes.get('/:id', deliveryController.getDelivery);
 deliveryRoutes.post('/', deliveryController.create);
 
 export { deliveryRoutes };

@@ -2,19 +2,23 @@ import { prisma } from '../lib/prisma.js';
 import crypto from 'crypto';
 
 interface CreateDeliveryDTO {
-    customer_name: string;
-    customer_email: string;
-    pickup_lat: number;
-    pickup_lng: number;
-    dropoff_lat: number;
-    dropoff_lng: number;
+  customer_name: string;
+  customer_email: string;
+  pickup_lat: number;
+  pickup_lng: number;
+  dropoff_lat: number;
+  dropoff_lng: number;
 }
 
 export class DeliveryService {
-    async execute(data: CreateDeliveryDTO) {
-        const trackingCode = `TRK-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
+  async listAll() {
+    return await prisma.delivery.findMany();
+  }
 
-        const result = await prisma.$queryRaw`
+  async execute(data: CreateDeliveryDTO) {
+    const trackingCode = `TRK-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
+
+    const result = await prisma.$queryRaw`
       INSERT INTO "deliveries" (
         id, 
         tracking_code, 
@@ -36,10 +40,22 @@ export class DeliveryService {
       RETURNING id, tracking_code, customer_name, status;
     `;
 
-        if (Array.isArray(result) && result.length > 0) {
-            return result[0];
-        }
-
-        throw new Error('Erro ao criar a entrega no banco de dados.');
+    if (Array.isArray(result) && result.length > 0) {
+      return result[0];
     }
+
+    throw new Error('Erro ao criar a entrega no banco de dados.');
+  }
+
+  async saveLocation(deliveryId: string, lat: number, lng: number) {
+    await prisma.$executeRaw`
+    INSERT INTO delivery_locations_history (id, delivery_id, location, timestamp)
+    VALUES (
+      gen_random_uuid(), 
+      ${deliveryId}, 
+      ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography, 
+      NOW()
+    )
+  `;
+  }
 }

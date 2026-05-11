@@ -10,7 +10,6 @@ interface CreateUserDTO {
 
 export class UserService {
     async execute({ name, email, password, role }: CreateUserDTO) {
-        // 1. Verifica se o e-mail já está em uso
         const userExists = await prisma.user.findUnique({
             where: { email },
         });
